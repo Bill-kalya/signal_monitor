@@ -1,0 +1,24 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "Build Project",
+            "command": "g++",
+            "args": [
+                "-std=c++17",
+                "-g",
+                "-o",
+                "${workspaceFolder}/build/signal_monitor",
+                "${workspaceFolder}/src/main.cpp",
+                "-lwlanapi",
+                "-lole32"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "detail": "Compiler: g++"
+        }
+    ]
+}
