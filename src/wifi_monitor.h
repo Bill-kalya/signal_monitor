@@ -8,6 +8,7 @@
 #include "signal_monitor.h"
 #include <vector>
 #include <string>
+#include <cstdio>
 
 class WiFiMonitor : public SignalMonitor {
 private:

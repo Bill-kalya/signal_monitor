@@ -1,9 +1,12 @@
+#ifndef _WIN32
 #include <fcntl.h>
 #include <unistd.h>
 #include <termios.h>
+#endif
 #include <cstring>
 #include <chrono>
 #include <thread>
+#include <string>
 
 class SerialHandler {
 private:
@@ -12,12 +15,25 @@ private:
 public:
     SerialHandler() : fd(-1) {}
     ~SerialHandler() {
+#ifndef _WIN32
         if (fd != -1) {
             close(fd);
         }
+#endif
     }
 
-    bool open_serial(const char* device, int baud = B115200) {
+    bool open_serial(const char* device, int baud = 115200) {
+#ifndef _WIN32
+        int speed;
+        switch (baud) {
+            case 9600: speed = B9600; break;
+            case 19200: speed = B19200; break;
+            case 38400: speed = B38400; break;
+            case 57600: speed = B57600; break;
+            case 115200: speed = B115200; break;
+            default: speed = B115200;
+        }
+
         fd = open(device, O_RDWR | O_NOCTTY | O_NONBLOCK);
         if (fd < 0) return false;
         
@@ -29,8 +45,8 @@ public:
             return false;
         }
 
-        cfsetospeed(&tty, baud);
-        cfsetispeed(&tty, baud);
+        cfsetospeed(&tty, speed);
+        cfsetispeed(&tty, speed);
 
         tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;
         tty.c_iflag &= ~IGNBRK;
@@ -53,15 +69,23 @@ public:
         
         tcflush(fd, TCIOFLUSH);
         return true;
+#else
+        return false;
+#endif
     }
 
     bool write_cmd(const std::string& cmd) {
+#ifndef _WIN32
         std::string full_cmd = cmd + "\r";
         ssize_t n = write(fd, full_cmd.c_str(), full_cmd.size());
         return n == static_cast<ssize_t>(full_cmd.size());
+#else
+        return false;
+#endif
     }
 
     std::string read_response(int timeout_ms = 1000) {
+#ifndef _WIN32
         std::string response;
         char buffer[256];
         auto start = std::chrono::steady_clock::now();
@@ -86,5 +110,8 @@ public:
         }
         
         return response;
+#else
+        return "";
+#endif
     }
 };

@@ -4,6 +4,7 @@
 #include "signal_monitor.h"
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <filesystem>
 #include <sqlite3.h>
 #include <iomanip>
@@ -29,6 +30,9 @@ public:
         // SQLite database
         sqlite_filename = "data/signal_data.db";
         initialize_sqlite();
+        
+        // Initialize CSV file
+        initialize_csv();
         
         std::cout << "Data Logger initialized:\n";
         std::cout << "  CSV: " << csv_filename << "\n";
@@ -84,25 +88,36 @@ public:
     void generate_report() {
         std::cout << "\n=== SIGNAL DATA REPORT ===\n";
         
-        // Read and analyze CSV data
-        std::iffile file(csv_filename);
+        std::ifstream file(csv_filename);
         std::string line;
         int total_entries = 0;
         std::map<std::string, int> signal_counts;
         std::map<std::string, int> technology_counts;
         
         while (std::getline(file, line)) {
-            if (total_entries > 0) { // Skip header
-                std::stringstream ss(line);
-                std::string type, quality, technology;
-                int strength;
+            if (total_entries > 0) {
+                std::vector<std::string> fields;
+                bool in_quotes = false;
+                std::string field;
                 
-                // Parse CSV (simplified)
-                std::getline(ss, type, ',');
-                // ... parse other fields
+                for (char c : line) {
+                    if (c == '"') {
+                        in_quotes = !in_quotes;
+                    } else if (c == ',' && !in_quotes) {
+                        fields.push_back(field);
+                        field.clear();
+                    } else {
+                        field += c;
+                    }
+                }
+                fields.push_back(field);
                 
-                signal_counts[quality]++;
-                technology_counts[technology]++;
+                if (fields.size() >= 5) {
+                    signal_counts[fields[4]]++;
+                }
+                if (fields.size() >= 8) {
+                    technology_counts[fields[7]]++;
+                }
             }
             total_entries++;
         }
@@ -113,9 +128,11 @@ public:
             std::cout << "  " << quality << ": " << count << " measurements\n";
         }
         
-        std::cout << "Technologies Found:\n";
-        for (const auto& [tech, count] : technology_counts) {
-            std::cout << "  " << tech << ": " << count << " measurements\n";
+        if (!technology_counts.empty()) {
+            std::cout << "Technologies Found:\n";
+            for (const auto& [tech, count] : technology_counts) {
+                std::cout << "  " << tech << ": " << count << " measurements\n";
+            }
         }
     }
 

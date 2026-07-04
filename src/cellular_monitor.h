@@ -1,3 +1,6 @@
+#ifndef CELLULAR_MONITOR_H
+#define CELLULAR_MONITOR_H
+
 #include "signal_monitor.h"
 #include "serial_handler.h"
 #include <regex>
@@ -124,3 +127,5 @@ private:
         return 9999;
     }
 };
+
+#endif
